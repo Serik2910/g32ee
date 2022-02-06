@@ -7,7 +7,7 @@
 <head>
     <title>Title</title>
     <link rel="stylesheet" href="/bs/css/bootstrap.min.css">
-    <script type="text/javascript" src="/tinymce/jquery-3.6.0.min.js"></script>
+<%--    <script type="text/javascript" src="/tinymce/jquery-3.6.0.min.js"></script>--%>
     <style>
         img{
             max-width: 100%;
@@ -43,15 +43,15 @@
                                 &#x2764;
                             </a>
                             <script type = "text/javascript">
-                                function toLike(filmId){
+                                async function toLike(filmId){
                                     // alert(filmId);
-                                    $.post("/AddLikeServlet",{
-                                        film_id: filmId
-                                    },
-                                    function (result){
-                                        document.getElementById("likeAmount").innerHTML=result;
+                                    const param = new URLSearchParams();
+                                    param.append('film_id', filmId);
+                                    const res = await fetch("/AddLikeServlet",{
+                                        method: 'POST',
+                                        body: param
                                     });
-
+                                    document.getElementById("likeAmount").innerHTML=await res.json();
                                 }
                             </script>
                             <%
@@ -81,16 +81,19 @@
                     <textarea  id="commentArea" class="form-control"></textarea>
                     <button class="btn btn-success btn-sm mt-3" onclick="toAddComment(${film.id})">Add Comment</button>
                     <script>
-                        function toAddComment(filmId){
+                        async function toAddComment(filmId){
                             var commentArea = document.getElementById("commentArea");
-                            $.post("/AddCommentServlet",{
-                                id: filmId ,
-                                comment: commentArea.value
-                            }, function (res){
-                                commentArea.value = "";
-                                LoadComments();
+                            const params = new URLSearchParams();
+                            params.append('id', filmId);
+                            params.append('comment', commentArea.value);
+                            const res = await fetch("/AddCommentServlet",{
+                                method:'POST',
+                                body: params
+                            });
+                            commentArea.value = "";
+                            LoadComments();
                                 // alert("Ok");
-                            })
+
                         }
                     </script>
                     <%
@@ -107,23 +110,21 @@
 
                 </div>
                 <script type="text/javascript">
-                    function LoadComments(){
-                        $.get("/LoadCommentsServlet", {id:${film.id}},
-                        function (res) {
-                            var comms = JSON.parse(res);
-                            var htmlCode ="";
-                            for(i=0;i<comms.length;i++){
-                                htmlCode+="<div class=\"list-group\">";
-                                htmlCode+="<a href=\"Javascript:void(0)\" class=\"list-group-item list-group-item-action \">";
-                                htmlCode+="<div class=\"d-flex w-100 justify-content-between\">";
-                                htmlCode+="<h5 class=\"mb-1\">"+comms[i].user.fullName+"</h5>";
-                                htmlCode+="<small>"+comms[i].postDate+"</small>";
-                                htmlCode+="</div>";
-                                htmlCode+="<p class=\"mb-1\">"+comms[i].comment+"</p>";
-                                htmlCode+="</a></div>";
-                            }
-                            document.getElementById("comment").innerHTML=htmlCode;
-                        })
+                    async function LoadComments() {
+                        const res = await fetch("/LoadCommentsServlet?id=" +${film.id});
+                        const comms = await res.json();
+                        let htmlCode = "";
+                        for (i = 0; i < comms.length; i++) {
+                            htmlCode += "<div class=\"list-group\">";
+                            htmlCode += "<a href=\"Javascript:void(0)\" class=\"list-group-item list-group-item-action \">";
+                            htmlCode += "<div class=\"d-flex w-100 justify-content-between\">";
+                            htmlCode += "<h5 class=\"mb-1\">" + comms[i].user.fullName + "</h5>";
+                            htmlCode += "<small>" + comms[i].postDate + "</small>";
+                            htmlCode += "</div>";
+                            htmlCode += "<p class=\"mb-1\">" + comms[i].comment + "</p>";
+                            htmlCode += "</a></div>";
+                        }
+                        document.getElementById("comment").innerHTML = htmlCode;
                     }
                 </script>
 
